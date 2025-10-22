@@ -21,7 +21,7 @@ A comprehensive boilerplate for building React Native applications with Expo, fe
 src/
 ├── app/              # Expo Router screens
 │   ├── (auth)/       # Authentication screens
-│   ├── (tabs)/       # Tab navigation screens
+│   ├── (protected)/  # Tab navigation screens
 │   └── (admin)/      # Admin screens
 ├── components/       # Reusable UI components
 ├── contexts/         # React Context providers
