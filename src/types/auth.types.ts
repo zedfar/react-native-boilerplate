@@ -1,0 +1,32 @@
+export interface User {
+  password?: any;
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user' | string;
+  avatar?: string;
+  createdAt: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+export interface TokenPayload {
+  userId: string;
+  email: string;
+  role: string;
+  exp: number;
+}

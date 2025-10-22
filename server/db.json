@@ -1,0 +1,227 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "admin@example.com",
+      "password": "admin123",
+      "name": "Admin User",
+      "role": "admin",
+      "avatar": "https://i.pravatar.cc/150?img=1",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "email": "developer@localhost.com",
+      "password": "@developer",
+      "name": "Developer",
+      "role": "admin",
+      "avatar": "https://i.pravatar.cc/150?img=2",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "3",
+      "email": "user@example.com",
+      "password": "user123",
+      "name": "Regular User",
+      "role": "user",
+      "avatar": "https://i.pravatar.cc/150?img=3",
+      "createdAt": "2024-01-02T00:00:00.000Z"
+    },
+    {
+      "id": "4",
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "password": "@developer",
+      "role": "admin",
+      "status": "active",
+      "avatar": "https://i.pravatar.cc/150?img=3",
+      "createdAt": "2024-01-15"
+    },
+    {
+      "id": "4",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "password": "@developer",
+      "role": "user",
+      "status": "active",
+      "avatar": "https://i.pravatar.cc/150?img=3",
+      "createdAt": "2024-02-20"
+    },
+    {
+      "id": "6",
+      "name": "Mike Johnson",
+      "email": "mike.johnson@example.com",
+      "password": "@developer",
+      "role": "user",
+      "status": "active",
+      "avatar": "https://i.pravatar.cc/150?img=3",
+      "createdAt": "2024-03-10"
+    },
+    {
+      "id": "7",
+      "name": "Sarah Williams",
+      "email": "sarah.williams@example.com",
+      "password": "@developer",
+      "role": "admin",
+      "status": "active",
+      "avatar": "https://i.pravatar.cc/150?img=3",
+      "createdAt": "2024-01-25"
+    },
+    {
+      "id": "8",
+      "name": "Tom Brown",
+      "email": "tom.brown@example.com",
+      "password": "@developer",
+      "role": "user",
+      "status": "inactive",
+      "avatar": "https://i.pravatar.cc/150?img=3",
+      "createdAt": "2024-04-05"
+    },
+    {
+      "id": "2",
+      "email": "user@localhost.com",
+      "password": "@developer",
+      "name": "Developer",
+      "role": "user",
+      "avatar": "https://i.pravatar.cc/150?img=10",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "news": [
+    {
+      "id": "1",
+      "title": "Breaking: New Technology Advances",
+      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "excerpt": "Revolutionary AI breakthrough changes everything",
+      "image": "https://picsum.photos/400/300?random=1",
+      "categoryId": "1",
+      "authorId": "1",
+      "publishedAt": "2024-10-22T14:00:00.000Z",
+      "createdAt": "2024-10-22T13:00:00.000Z",
+      "updatedAt": "2024-10-22T13:00:00.000Z",
+      "views": 1245,
+      "likes": 89
+    },
+    {
+      "id": "2",
+      "title": "Sports Championship Finals This Weekend",
+      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "excerpt": "Championship finals set for this weekend",
+      "image": "https://picsum.photos/400/300?random=2",
+      "categoryId": "2",
+      "authorId": "1",
+      "publishedAt": "2024-10-21T14:00:00.000Z",
+      "createdAt": "2024-10-21T13:00:00.000Z",
+      "updatedAt": "2024-10-21T13:00:00.000Z",
+      "views": 987,
+      "likes": 45
+    },
+    {
+      "id": "3",
+      "title": "Global Markets Show Strong Recovery",
+      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "excerpt": "Economic indicators point to sustained growth",
+      "image": "https://picsum.photos/400/300?random=3",
+      "categoryId": "3",
+      "authorId": "2",
+      "publishedAt": "2024-10-20T14:00:00.000Z",
+      "createdAt": "2024-10-20T13:00:00.000Z",
+      "updatedAt": "2024-10-20T13:00:00.000Z",
+      "views": 756,
+      "likes": 34
+    },
+    {
+      "id": "4",
+      "title": "New Movie Breaks Box Office Records",
+      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "excerpt": "Hollywood blockbuster exceeds all expectations",
+      "image": "https://picsum.photos/400/300?random=4",
+      "categoryId": "4",
+      "authorId": "2",
+      "publishedAt": "2024-10-19T14:00:00.000Z",
+      "createdAt": "2024-10-19T13:00:00.000Z",
+      "updatedAt": "2024-10-19T13:00:00.000Z",
+      "views": 2103,
+      "likes": 156
+    },
+    {
+      "id": "5",
+      "title": "Climate Summit Reaches Historic Agreement",
+      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "excerpt": "World leaders commit to ambitious climate goals",
+      "image": "https://picsum.photos/400/300?random=5",
+      "categoryId": "1",
+      "authorId": "3",
+      "publishedAt": "2024-10-18T14:00:00.000Z",
+      "createdAt": "2024-10-18T13:00:00.000Z",
+      "updatedAt": "2024-10-18T13:00:00.000Z",
+      "views": 1876,
+      "likes": 203
+    },
+    {
+      "id": "6",
+      "title": "Tech Giant Unveils Revolutionary Product",
+      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "excerpt": "New gadget promises to transform daily life",
+      "image": "https://picsum.photos/400/300?random=6",
+      "categoryId": "1",
+      "authorId": "1",
+      "publishedAt": "2024-10-17T14:00:00.000Z",
+      "createdAt": "2024-10-17T13:00:00.000Z",
+      "updatedAt": "2024-10-17T13:00:00.000Z",
+      "views": 3421,
+      "likes": 287
+    },
+    {
+      "id": "7",
+      "title": "Olympic Athlete Sets New World Record",
+      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "excerpt": "Historic performance stuns sports world",
+      "image": "https://picsum.photos/400/300?random=7",
+      "categoryId": "2",
+      "authorId": "2",
+      "publishedAt": "2024-10-16T14:00:00.000Z",
+      "createdAt": "2024-10-16T13:00:00.000Z",
+      "updatedAt": "2024-10-16T13:00:00.000Z",
+      "views": 1654,
+      "likes": 98
+    },
+    {
+      "id": "8",
+      "title": "Startup Valued at $1 Billion After Funding",
+      "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "excerpt": "Tech unicorn emerges from latest funding round",
+      "image": "https://picsum.photos/400/300?random=8",
+      "categoryId": "3",
+      "authorId": "3",
+      "publishedAt": "2024-10-15T14:00:00.000Z",
+      "createdAt": "2024-10-15T13:00:00.000Z",
+      "updatedAt": "2024-10-15T13:00:00.000Z",
+      "views": 892,
+      "likes": 67
+    }
+  ],
+  "categories": [
+    {
+      "id": "1",
+      "name": "Technology",
+      "slug": "technology",
+      "description": "Latest tech news and updates",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "2",
+      "name": "Sports",
+      "slug": "sports",
+      "description": "Sports news and highlights",
+      "color": "#10b981"
+    },
+    {
+      "id": "3",
+      "name": "Business",
+      "slug": "business",
+      "description": "Business and finance news",
+      "color": "#f59e0b"
+    }
+  ]
+}
