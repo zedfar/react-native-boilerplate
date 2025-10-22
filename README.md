@@ -18,19 +18,43 @@ A comprehensive boilerplate for building React Native applications with Expo, fe
 ## Project Structure
 
 ```
-src/
-├── app/              # Expo Router screens
-│   ├── (auth)/       # Authentication screens
-│   ├── (protected)/  # Tab navigation screens
-│   └── (admin)/      # Admin screens
-├── components/       # Reusable UI components
-├── contexts/         # React Context providers
-├── services/         # API service layer
-├── types/            # TypeScript type definitions
-├── utils/            # Utility functions
-├── theme/            # Theme configuration
-├── hooks/            # Custom React hooks
-└── assets/           # Images, fonts, etc.
+.
+├── app
+│   ├── (admin)              # Halaman & route khusus admin
+│   ├── (auth)               # Halaman auth (login, register, dsb)
+│   ├── (protected)          # Halaman yang membutuhkan autentikasi
+│   └── _layout.tsx          # Root layout untuk Expo Router
+│
+├── server
+│   ├── db.json              # Mock data untuk JSON Server
+│   ├── middleware.js        # Custom middleware untuk API
+│   └── routes.json          # Routing konfigurasi JSON Server
+│
+├── src
+│   ├── assets               # Gambar, font, dan aset statis
+│   ├── components           # Komponen UI reusable
+│   ├── contexts             # Context API (Auth, Theme, dsb)
+│   ├── hooks                # Custom React hooks
+│   ├── services             # API service (Axios, interceptors, dll)
+│   ├── theme                # Konfigurasi tema (warna, dark mode)
+│   ├── types                # TypeScript type definitions
+│   └── utils                # Helper functions & constants
+│
+├── app.json                 # Konfigurasi Expo project
+├── babel.config.js          # Konfigurasi Babel
+├── expo-env.d.ts            # Type definitions untuk Expo environment
+├── global.css               # Global style untuk Tailwind / NativeWind
+├── index.ts                 # Entry point utama aplikasi
+├── LICENSE                  # Lisensi project
+├── metro.config.js          # Konfigurasi Metro bundler
+├── nativewind-env.d.ts      # Type support untuk NativeWind
+├── package.json             # Dependency & script project
+├── package-lock.json        # Lock file npm
+├── README.md                # Dokumentasi project
+├── structure.txt            # Struktur folder (auto-generated)
+├── tailwind.config.js       # Konfigurasi TailwindCSS
+└── tsconfig.json            # Konfigurasi TypeScript
+
 ```
 
 ## Getting Started

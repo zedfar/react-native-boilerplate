@@ -4,8 +4,10 @@ export interface User {
   email: string;
   name: string;
   role: 'admin' | 'user' | string;
+  status: 'active' | 'inactive' | string;
   avatar?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface LoginCredentials {
@@ -28,5 +30,6 @@ export interface TokenPayload {
   userId: string;
   email: string;
   role: string;
+  status: string;
   exp: number;
 }
