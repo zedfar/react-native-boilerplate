@@ -45,5 +45,10 @@
     "tailwindcss": "^3.4.13",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "install": {
+      "exclude": ["react", "expo", "expo-constants", "react-native"]
+    }
+  }
 }
