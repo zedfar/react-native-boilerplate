@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Expo Boilerplate",
-    "slug": "expo-boilerplate",
+    "slug": "react-native-boiler-plates",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
@@ -24,7 +24,8 @@
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yaksha.expoboilerplate"
+      "package": "com.yaksha.expoboilerplate",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -45,8 +46,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
-      }
+        "projectId": "94463967-69e2-4f30-88bc-fb52430cba59"
+      },
+      "router": {}
     },
     "updates": {
       "url": "https://u.expo.dev/YOUR_EAS_PROJECT_ID",
@@ -55,6 +57,7 @@
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
-    }
+    },
+    "owner": "zedfar"
   }
 }

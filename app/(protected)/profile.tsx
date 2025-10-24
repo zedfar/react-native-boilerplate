@@ -13,10 +13,14 @@ import { User, Mail, Phone, MapPin, Calendar, Edit2, Save, X } from 'lucide-reac
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/common/Button';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '@/components/header/AppHeader';
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -29,6 +33,7 @@ export default function ProfileScreen() {
     bio: 'Passionate about technology and innovation. Always learning something new.',
     joinDate: 'January 2024',
   });
+
 
   const handleSave = async () => {
     setLoading(true);
@@ -79,8 +84,17 @@ export default function ProfileScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <AppHeader
+        variant="back"
+        title="Profile"
+        subtitle="Manage your personal information"
+        onBackPress={() => router.back()}
+        colors={colors}
+      />
       <ScrollView showsVerticalScrollIndicator={false}>
+
+
         {/* Header with Avatar */}
         <View style={styles.header}>
           <View style={[styles.avatarContainer, { backgroundColor: colors.primary }]}>
@@ -140,7 +154,7 @@ export default function ProfileScreen() {
         {/* Profile Information */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Profile Information</Text>
-          
+
           <InfoCard icon={User} label="Name" value={profileData.name} editable />
           <InfoCard icon={Mail} label="Email" value={profileData.email} editable />
           <InfoCard icon={Phone} label="Phone" value={profileData.phone} editable />
@@ -171,7 +185,7 @@ export default function ProfileScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -14,6 +14,10 @@ import {
 import { Search, Filter, Heart, Eye, Calendar, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
+// import { AppHeader } from '@/components/layout/AppHeader';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '@/components/header/AppHeader';
 
 const { width } = Dimensions.get('window');
 const ITEMS_PER_PAGE = 6;
@@ -45,6 +49,7 @@ const categories = [
 export default function HomeScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const router = useRouter();
   const [newsList, setNewsList] = useState<News[]>([]);
   const [filteredNews, setFilteredNews] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
@@ -219,10 +224,10 @@ export default function HomeScreen() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
@@ -245,6 +250,10 @@ export default function HomeScreen() {
     }
   };
 
+  const handleProfilePress = () => {
+    router.push('/(protected)/profile')
+  };
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -255,41 +264,23 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <AppHeader
+        variant="search"
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search..."
+        user={{ ...user }} // Pass user object langsung
+        onProfilePress={handleProfilePress}
+        colors={colors}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-              Welcome back,
-            </Text>
-            <Text style={[styles.username, { color: colors.text }]}>
-              {user?.name || 'User'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: `${colors.primary}08` }]}>
-          <Search size={20} color={colors.textSecondary} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search news..."
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Text style={{ color: colors.primary, fontWeight: '600' }}>Clear</Text>
-            </TouchableOpacity>
-          )}
-        </View>
 
         {/* Category Filter */}
         <ScrollView
@@ -346,7 +337,7 @@ export default function HomeScreen() {
             {currentNews.map((news) => (
               <TouchableOpacity
                 key={news.id}
-                style={[styles.newsCard, { 
+                style={[styles.newsCard, {
                   backgroundColor: colors.card || colors.background,
                   shadowColor: colors.text,
                 }]}
@@ -364,7 +355,7 @@ export default function HomeScreen() {
                   <Text style={[styles.newsExcerpt, { color: colors.textSecondary }]} numberOfLines={2}>
                     {news.excerpt}
                   </Text>
-                  
+
                   <View style={styles.newsFooter}>
                     <View style={styles.newsStats}>
                       <View style={styles.statItem}>
@@ -459,7 +450,7 @@ export default function HomeScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

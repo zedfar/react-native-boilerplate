@@ -23,6 +23,8 @@ import {
 import { useTheme } from '@hooks/useTheme';
 import { useAuth } from '@hooks/useAuth';
 import { useRouter } from 'expo-router';
+import { AppHeader } from '@/components/header/AppHeader';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
   const { colors, theme, themeMode, setThemeMode } = useTheme();
@@ -74,7 +76,7 @@ export default function SettingsScreen() {
   const SettingSection = ({ title, children }: any) => (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{title}</Text>
-      <View style={[styles.sectionContent, { 
+      <View style={[styles.sectionContent, {
         backgroundColor: colors.card || colors.background,
         shadowColor: colors.text,
       }]}>
@@ -112,15 +114,17 @@ export default function SettingsScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Settings</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            Manage your account and preferences
-          </Text>
-        </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+
+      <AppHeader
+        variant="back"
+        title="Settings"
+        subtitle="Manage your account and preferences"
+        onBackPress={() => router.back()}
+        colors={colors}
+      />
+
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* Appearance */}
         <SettingSection title="APPEARANCE">
@@ -229,7 +233,7 @@ export default function SettingsScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -237,9 +241,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scroll: {
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 24,
   },
   headerTitle: {

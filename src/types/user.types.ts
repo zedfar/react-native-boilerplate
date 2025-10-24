@@ -1,7 +1,7 @@
-export interface User {
+export interface UserData {
   id: string;
   email: string;
-  password: string;
+//   password?: string;
   name: string;
   role: 'admin' | 'user';
   status: 'active' | 'inactive';

@@ -2,12 +2,14 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Tabs, Redirect } from 'expo-router';
 import { Home, User, Settings } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function MainLayout() {
   const { colors } = useTheme();
   const { user, isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
@@ -25,18 +27,23 @@ export default function MainLayout() {
           backgroundColor: colors.card || colors.background,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 65,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-          paddingTop: 8,
+          height: Platform.OS === 'ios'
+            ? 50 + insets.bottom
+            : 50 + (insets.bottom > 0 ? insets.bottom : 8),
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          paddingTop: 0,
           elevation: 0,
           shadowOpacity: 0,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: '600',
-          marginTop: 4,
+          marginTop: 2,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 2,
         },
       }}
     >
@@ -70,7 +77,7 @@ export default function MainLayout() {
         }}
       />
 
-      {/* {isAdmin && ( */}
+      {isAdmin && (
         <Tabs.Screen
           name="settings"
           options={{
@@ -83,19 +90,18 @@ export default function MainLayout() {
                 <Settings size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
               </View>
             ),
-            // Hide settings tab if not admin
-            // href: isAdmin ? '/(protected)/settings' : null,
           }}
         />
+      )}
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
   iconContainer: {
-    width: 48,
-    height: 32,
-    borderRadius: 12,
+    width: 40,
+    height: 26,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
