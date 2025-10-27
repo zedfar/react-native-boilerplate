@@ -6,6 +6,9 @@ export interface User {
   role: 'admin' | 'user' | string;
   status: 'active' | 'inactive' | string;
   avatar?: string;
+  about?: string;
+  location?: string;
+  phone?:string;
   createdAt: string;
   updatedAt: string;
 }

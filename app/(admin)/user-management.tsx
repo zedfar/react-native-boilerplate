@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+// app/(admin)/users/index.tsx - IMPROVED VERSION
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,144 +7,85 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Alert,
-  Modal,
   ActivityIndicator,
   RefreshControl,
   FlatList,
 } from 'react-native';
-import {
-  Search,
-  UserPlus,
-  Edit2,
-  Trash2,
-  Shield,
-  User,
-  Mail,
-  X,
-  MoreVertical,
-  AlertCircle,
-  ChevronDown,
-  ArrowUpDown,
-} from 'lucide-react-native';
+import { Search, UserPlus, Filter, X } from 'lucide-react-native';
 import { useTheme } from '@hooks/useTheme';
-import { userService } from '@/services/userServices';
-import { CreateUserInput, UpdateUserInput, UserData, UserFilters } from '@/types/user.types';
+import { CreateUserInput, UpdateUserInput } from '@/types/user.types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/header/AppHeader';
 import { useRouter } from 'expo-router';
+import Toast from 'react-native-toast-message';
 
-const ITEMS_PER_PAGE = 10;
+// Custom Hook
+import { useUsers } from '@/hooks/useUsers';
+
+// Components
+import { UserCard } from '@/components/users/UserCard';
+import { EmptyState } from '@/components/users/EmptyState';
+import { ErrorState } from '@/components/users/ErrorState';
+import { FilterModal } from '@/components/users/FilterModal';
+import { UserFormModal } from '@/components/users/UserFormModal';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 export default function UserManagementScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+
+  // Use custom hook
+  const {
+    users,
+    loading,
+    refreshing,
+    loadingMore,
+    error,
+    filters,
+    refreshUsers,
+    loadMoreUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    toggleUserStatus,
+    updateFilters,
+    clearFilters,
+    getActiveFilterCount,
+  } = useUsers();
+
+  // Local UI state
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<UserFilters>({
-    page: 1,
-    limit: ITEMS_PER_PAGE,
-    sortBy: 'latest',
-  });
-  const [selectedRole, setSelectedRole] = useState<'all' | 'admin' | 'user'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UpdateUserInput | null>(null);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [showOptionsMenu, setShowOptionsMenu] = useState<string | null>(null);
-  const [users, setUsers] = useState<UserData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [totalUsers, setTotalUsers] = useState(0);
 
-  const [newUser, setNewUser] = useState<CreateUserInput>({
+  const newUserInitial: CreateUserInput = {
     name: '',
     password: '',
     status: 'active',
     email: '',
-    role: 'user' as 'admin' | 'user',
-  });
-
+    role: 'user',
+  };
 
   // Debounced search
-  useEffect(() => {
+  React.useEffect(() => {
     const timer = setTimeout(() => {
       if (searchQuery !== filters.search) {
-        setFilters(prev => ({ ...prev, search: searchQuery, page: 1 }));
+        updateFilters({ search: searchQuery });
       }
     }, 500);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-
-  // Load users when filters change
-  useEffect(() => {
-    loadUsers(true);
-  }, [filters]);
-
-  const loadUsers = async (reset: boolean = false) => {
-    try {
-      if (reset) {
-        setLoading(true);
-        setError(null);
-      } else {
-        setLoadingMore(true);
-      }
-
-      const data = await userService.getAll(filters);
-
-      if (reset) {
-        setUsers(data);
-      } else {
-        setUsers(prev => [...prev, ...data]);
-      }
-
-      // Check if there are more items
-      setHasMore(data.length === ITEMS_PER_PAGE);
-      setTotalUsers(data.length); // In real API, this would come from response headers
-    } catch (err) {
-      setError('Failed to load users');
-      console.error('Error loading users:', err);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    setFilters(prev => ({ ...prev, page: 1 }));
-    await loadUsers(true);
-    setRefreshing(false);
-  };
-
-
-  const loadMore = () => {
-    if (!loadingMore && hasMore) {
-      setFilters(prev => ({ ...prev, page: (prev.page || 1) + 1 }));
-    }
-  };
-
-  const handleAddUser = async () => {
-    if (!newUser.name || !newUser.email) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const user = await userService.create(newUser);
-      setNewUser({ name: '', email: '', role: 'user', password: '' });
+  // Handlers
+  const handleAddUser = async (userData: CreateUserInput) => {
+    const result = await createUser(userData);
+    if (result.success) {
       setShowAddModal(false);
-      Alert.alert('Success', 'User added successfully');
-      onRefresh(); // Refresh list
-    } catch (err) {
-      Alert.alert('Error', 'Failed to add user');
-      console.error('Error adding user:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -153,405 +95,48 @@ export default function UserManagementScreen() {
     setShowOptionsMenu(null);
   };
 
-  const handleUpdateUser = async () => {
-    if (!selectedUser) return;
-
-    try {
-      setLoading(true);
-      await userService.update(selectedUser);
+  const handleUpdateUser = async (userData: UpdateUserInput) => {
+    const result = await updateUser(userData);
+    if (result.success) {
       setShowEditModal(false);
-      Alert.alert('Success', 'User updated successfully');
-      onRefresh();
-    } catch (err) {
-      Alert.alert('Error', 'Failed to update user');
-      console.error('Error updating user:', err);
-    } finally {
-      setLoading(false);
+      setSelectedUser(null);
     }
   };
 
   const handleDeleteUser = (userId: string) => {
-    Alert.alert(
-      'Delete User',
-      'Are you sure you want to delete this user?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await userService.delete(userId);
-              setShowOptionsMenu(null);
-              Alert.alert('Success', 'User deleted successfully');
-              onRefresh();
-            } catch (err) {
-              Alert.alert('Error', 'Failed to delete user');
-              console.error('Error deleting user:', err);
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    setUserToDelete(userId);
+    setShowDeleteDialog(true);
+    setShowOptionsMenu(null);
   };
 
-  const handleToggleStatus = async (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-
-    try {
-      await userService.update({
-        ...user,
-        status: user.status === 'active' ? 'inactive' : 'active',
-      });
-      setShowOptionsMenu(null);
-      onRefresh();
-    } catch (err) {
-      Alert.alert('Error', 'Failed to update user status');
-      console.error('Error toggling status:', err);
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    const result = await deleteUser(userToDelete);
+    if (result.success) {
+      setShowDeleteDialog(false);
+      setUserToDelete(null);
     }
   };
 
-  const applyFilters = (newFilters: Partial<UserFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
-    setShowFilterModal(false);
+  const handleToggleStatus = async (userId: string) => {
+    setShowOptionsMenu(null);
+    await toggleUserStatus(userId);
   };
 
-  const clearFilters = () => {
+  const handleClearFilters = () => {
     setSearchQuery('');
-    setFilters({
-      page: 1,
-      limit: ITEMS_PER_PAGE,
-      sortBy: 'latest',
-    });
+    clearFilters();
     setShowFilterModal(false);
   };
 
-
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (filters.role) count++;
-    if (filters.status) count++;
-    if (filters.sortBy && filters.sortBy !== 'latest') count++;
-    return count;
+  // Clear search
+  const handleClearSearch = () => {
+    setSearchQuery('');
   };
 
-  const RoleChip = ({ role }: { role: string }) => (
-    <View style={[
-      styles.roleChip,
-      { backgroundColor: role === 'admin' ? '#ef444410' : '#3b82f610' }
-    ]}>
-      <Text style={[
-        styles.roleText,
-        { color: role === 'admin' ? '#ef4444' : '#3b82f6' }
-      ]}>
-        {role.toUpperCase()}
-      </Text>
-    </View>
-  );
+  const hasActiveFilters = !!(filters.role || filters.status || (filters.sortBy && filters.sortBy !== 'latest'));
 
-  const StatusBadge = ({ status }: { status: string }) => (
-    <View style={[
-      styles.statusBadge,
-      { backgroundColor: status === 'active' ? '#10b98110' : '#6b728010' }
-    ]}>
-      <View style={[
-        styles.statusDot,
-        { backgroundColor: status === 'active' ? '#10b981' : '#6b7280' }
-      ]} />
-      <Text style={[
-        styles.statusText,
-        { color: status === 'active' ? '#10b981' : '#6b7280' }
-      ]}>
-        {status}
-      </Text>
-    </View>
-  );
-
-  const UserModal = ({ visible, onClose, title, children }: any) => (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
-            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-              <X size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-          {children}
-        </View>
-      </View>
-    </Modal>
-  );
-
-  const EmptyState = () => (
-    <View style={styles.emptyState}>
-      <User size={48} color={colors.textSecondary} />
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>No users found</Text>
-      <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-        {searchQuery || filters.role || filters.status
-          ? 'Try adjusting your filters'
-          : 'Add your first user to get started'}
-      </Text>
-      {(searchQuery || filters.role || filters.status) && (
-        <TouchableOpacity
-          style={[styles.clearButton, { backgroundColor: colors.primary }]}
-          onPress={clearFilters}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.clearButtonText}>Clear Filters</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  const ErrorState = () => (
-    <View style={styles.emptyState}>
-      <AlertCircle size={48} color="#ef4444" />
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>Failed to load users</Text>
-      <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-        {error}
-      </Text>
-      <TouchableOpacity
-        style={[styles.retryButton, { backgroundColor: colors.primary }]}
-        onPress={onRefresh}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.retryButtonText}>Retry</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const FilterModal = () => (
-    <Modal
-      visible={showFilterModal}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowFilterModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Filters & Sort</Text>
-            <TouchableOpacity onPress={() => setShowFilterModal(false)} activeOpacity={0.7}>
-              <X size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.filterModalBody}>
-            {/* Role Filter */}
-            <View style={styles.filterGroup}>
-              <Text style={[styles.filterLabel, { color: colors.text }]}>Role</Text>
-              <View style={styles.filterOptions}>
-                {[
-                  { value: undefined, label: 'All' },
-                  { value: 'admin', label: 'Admin' },
-                  { value: 'user', label: 'User' },
-                ].map((option) => (
-                  <TouchableOpacity
-                    key={option.label}
-                    style={[
-                      styles.filterOption,
-                      {
-                        backgroundColor: filters.role === option.value
-                          ? colors.primary
-                          : `${colors.primary}10`,
-                      },
-                    ]}
-                    onPress={() => setFilters((prev: any) => ({ ...prev, role: option.value }))}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        {
-                          color: filters.role === option.value ? '#FFFFFF' : colors.text,
-                          fontWeight: filters.role === option.value ? '700' : '500',
-                        },
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Status Filter */}
-            <View style={styles.filterGroup}>
-              <Text style={[styles.filterLabel, { color: colors.text }]}>Status</Text>
-              <View style={styles.filterOptions}>
-                {[
-                  { value: undefined, label: 'All' },
-                  { value: 'active', label: 'Active' },
-                  { value: 'inactive', label: 'Inactive' },
-                ].map((option) => (
-                  <TouchableOpacity
-                    key={option.label}
-                    style={[
-                      styles.filterOption,
-                      {
-                        backgroundColor: filters.status === option.value
-                          ? colors.primary
-                          : `${colors.primary}10`,
-                      },
-                    ]}
-                    onPress={() => setFilters((prev: any) => ({ ...prev, status: option.value }))}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        {
-                          color: filters.status === option.value ? '#FFFFFF' : colors.text,
-                          fontWeight: filters.status === option.value ? '700' : '500',
-                        },
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Sort By */}
-            <View style={styles.filterGroup}>
-              <Text style={[styles.filterLabel, { color: colors.text }]}>Sort By</Text>
-              <View style={styles.filterOptions}>
-                {[
-                  { value: 'latest', label: 'Latest' },
-                  { value: 'oldest', label: 'Oldest' },
-                  { value: 'name', label: 'Name' },
-                ].map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.filterOption,
-                      {
-                        backgroundColor: filters.sortBy === option.value
-                          ? colors.primary
-                          : `${colors.primary}10`,
-                      },
-                    ]}
-                    onPress={() => setFilters(prev => ({ ...prev, sortBy: option.value as any }))}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        {
-                          color: filters.sortBy === option.value ? '#FFFFFF' : colors.text,
-                          fontWeight: filters.sortBy === option.value ? '700' : '500',
-                        },
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]}
-              onPress={clearFilters}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.modalButtonText, { color: colors.text }]}>Clear All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.saveButton, { backgroundColor: colors.primary }]}
-              onPress={() => setShowFilterModal(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Apply</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
-  const renderUserCard = ({ item: user }: { item: UserData }) => (
-    <View
-      style={[styles.userCard, {
-        backgroundColor: colors.card || colors.background,
-        shadowColor: colors.text,
-      }]}
-    >
-      <View style={styles.userInfo}>
-        <View style={[styles.userAvatar, { backgroundColor: colors.primary }]}>
-          <Text style={styles.avatarText}>
-            {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-          </Text>
-        </View>
-        <View style={styles.userDetails}>
-          <Text style={[styles.userName, { color: colors.text }]}>{user.name}</Text>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-            {user.email}
-          </Text>
-          <View style={styles.userMeta}>
-            <RoleChip role={user.role} />
-            <StatusBadge status={user.status} />
-          </View>
-        </View>
-      </View>
-
-      <TouchableOpacity
-        style={styles.optionsButton}
-        onPress={() => setShowOptionsMenu(showOptionsMenu === user.id ? null : user.id)}
-        activeOpacity={0.7}
-      >
-        <MoreVertical size={20} color={colors.textSecondary} />
-      </TouchableOpacity>
-
-      {showOptionsMenu === user.id && (
-        <View style={[styles.optionsMenu, {
-          backgroundColor: colors.card || colors.background,
-          shadowColor: colors.text,
-        }]}>
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => handleEditUser(user)}
-            activeOpacity={0.7}
-          >
-            <Edit2 size={16} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => handleToggleStatus(user.id)}
-            activeOpacity={0.7}
-          >
-            <Shield size={16} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>
-              {user.status === 'active' ? 'Deactivate' : 'Activate'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => handleDeleteUser(user.id)}
-            activeOpacity={0.7}
-          >
-            <Trash2 size={16} color="#ef4444" />
-            <Text style={[styles.optionText, { color: '#ef4444' }]}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
-
+  // Loading state
   if (loading && users.length === 0) {
     return (
       <View style={[styles.container, styles.centerContent, { backgroundColor: colors.background }]}>
@@ -563,13 +148,17 @@ export default function UserManagementScreen() {
     );
   }
 
+  // Error state
   if (error && users.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>User Management</Text>
-        </View>
-        <ErrorState />
+        <AppHeader
+          variant="back"
+          title="User Management"
+          onBackPress={() => router.back()}
+          colors={colors}
+        />
+        <ErrorState error={error} onRetry={refreshUsers} colors={colors} />
       </View>
     );
   }
@@ -585,102 +174,189 @@ export default function UserManagementScreen() {
         colors={colors}
       />
 
-      {/* Search and Actions */}
+      {/* Search and Actions - IMPROVED */}
       <View style={styles.searchSection}>
-        <View style={[styles.searchContainer, { backgroundColor: `${colors.primary}08` }]}>
-          <Search size={20} color={colors.textSecondary} />
+        <View style={[styles.searchContainer, { 
+          backgroundColor: colors.surface || `${colors.primary}08`,
+          borderWidth: 1,
+          borderColor: searchQuery ? colors.primary : 'transparent',
+        }]}>
+          <Search size={20} color={searchQuery ? colors.primary : colors.textSecondary} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search users..."
+            placeholder="Search by name or email..."
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={handleClearSearch}
+              style={styles.clearButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <X size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
 
-        <TouchableOpacity
-          style={[styles.filterButton, {
-            backgroundColor: getActiveFilterCount() > 0 ? colors.primary : `${colors.primary}10`,
-          }]}
-          onPress={() => setShowFilterModal(true)}
-          activeOpacity={0.8}
-        >
-          <ArrowUpDown size={20} color={getActiveFilterCount() > 0 ? '#FFFFFF' : colors.text} />
-          {getActiveFilterCount() > 0 && (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>{getActiveFilterCount()}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.filterButton, {
+              backgroundColor: hasActiveFilters ? colors.primary : colors.surface || `${colors.primary}10`,
+              borderWidth: hasActiveFilters ? 0 : 1,
+              borderColor: colors.border || `${colors.primary}20`,
+            }]}
+            onPress={() => setShowFilterModal(true)}
+            activeOpacity={0.7}
+          >
+            <Filter size={20} color={hasActiveFilters ? '#FFFFFF' : colors.text} />
+            {getActiveFilterCount() > 0 && (
+              <View style={[styles.filterBadge, { backgroundColor: colors.error || '#ef4444' }]}>
+                <Text style={styles.filterBadgeText}>{getActiveFilterCount()}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: colors.primary }]}
-          onPress={() => setShowAddModal(true)}
-          activeOpacity={0.8}
-        >
-          <UserPlus size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addButton, { 
+              backgroundColor: colors.primary,
+            }]}
+            onPress={() => setShowAddModal(true)}
+            activeOpacity={0.7}
+          >
+            <UserPlus size={20} color="#FFFFFF" />
+            <Text style={styles.addButtonText}>Add</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Active Filters Display */}
-      {(filters.role || filters.status || (filters.sortBy && filters.sortBy !== 'latest')) && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.activeFiltersScroll}
-          contentContainerStyle={styles.activeFiltersContainer}
-        >
-          {filters.role && (
-            <View style={[styles.activeFilterChip, { backgroundColor: `${colors.primary}15` }]}>
-              <Text style={[styles.activeFilterText, { color: colors.primary }]}>
-                Role: {filters.role}
+      {/* Active Filters - IMPROVED */}
+      {hasActiveFilters && (
+        <View style={styles.activeFiltersWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.activeFiltersContainer}
+          >
+            {filters.role && (
+              <View style={[styles.activeFilterChip, { 
+                backgroundColor: colors.surface || `${colors.primary}15`,
+                borderWidth: 1,
+                borderColor: colors.primary,
+              }]}>
+                <Text style={[styles.activeFilterLabel, { color: colors.textSecondary }]}>
+                  Role:
+                </Text>
+                <Text style={[styles.activeFilterValue, { color: colors.primary }]}>
+                  {filters.role.charAt(0).toUpperCase() + filters.role.slice(1)}
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => updateFilters({ role: undefined })}
+                  style={styles.chipCloseButton}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <X size={14} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {filters.status && (
+              <View style={[styles.activeFilterChip, { 
+                backgroundColor: colors.surface || `${colors.primary}15`,
+                borderWidth: 1,
+                borderColor: colors.primary,
+              }]}>
+                <Text style={[styles.activeFilterLabel, { color: colors.textSecondary }]}>
+                  Status:
+                </Text>
+                <Text style={[styles.activeFilterValue, { color: colors.primary }]}>
+                  {filters.status.charAt(0).toUpperCase() + filters.status.slice(1)}
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => updateFilters({ status: undefined })}
+                  style={styles.chipCloseButton}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <X size={14} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {filters.sortBy && filters.sortBy !== 'latest' && (
+              <View style={[styles.activeFilterChip, { 
+                backgroundColor: colors.surface || `${colors.primary}15`,
+                borderWidth: 1,
+                borderColor: colors.primary,
+              }]}>
+                <Text style={[styles.activeFilterLabel, { color: colors.textSecondary }]}>
+                  Sort:
+                </Text>
+                <Text style={[styles.activeFilterValue, { color: colors.primary }]}>
+                  {filters.sortBy === 'name' ? 'Name' : 'Oldest'}
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => updateFilters({ sortBy: 'latest' })}
+                  style={styles.chipCloseButton}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <X size={14} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <TouchableOpacity
+              onPress={handleClearFilters}
+              style={[styles.clearAllButton, { 
+                backgroundColor: colors.surface || `${colors.error || '#ef4444'}10`,
+                borderWidth: 1,
+                borderColor: colors.error || '#ef4444',
+              }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.clearAllText, { color: colors.error || '#ef4444' }]}>
+                Clear All
               </Text>
-              <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, role: undefined }))}>
-                <X size={14} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-          )}
-          {filters.status && (
-            <View style={[styles.activeFilterChip, { backgroundColor: `${colors.primary}15` }]}>
-              <Text style={[styles.activeFilterText, { color: colors.primary }]}>
-                Status: {filters.status}
-              </Text>
-              <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, status: undefined }))}>
-                <X size={14} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-          )}
-          {filters.sortBy && filters.sortBy !== 'latest' && (
-            <View style={[styles.activeFilterChip, { backgroundColor: `${colors.primary}15` }]}>
-              <Text style={[styles.activeFilterText, { color: colors.primary }]}>
-                Sort: {filters.sortBy}
-              </Text>
-              <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, sortBy: 'latest' }))}>
-                <X size={14} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </ScrollView>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
       )}
 
       {/* Users List */}
       <FlatList
         data={users}
-        renderItem={renderUserCard}
+        renderItem={({ item }) => (
+          <UserCard
+            user={item}
+            colors={colors}
+            showOptionsMenu={showOptionsMenu === item.id}
+            onToggleMenu={() => setShowOptionsMenu(showOptionsMenu === item.id ? null : item.id)}
+            onEdit={() => handleEditUser(item)}
+            onDelete={() => handleDeleteUser(item.id)}
+            onToggleStatus={() => handleToggleStatus(item.id)}
+          />
+        )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.usersList}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={onRefresh}
+            onRefresh={refreshUsers}
             tintColor={colors.primary}
             colors={[colors.primary]}
           />
         }
-        onEndReached={loadMore}
+        onEndReached={loadMoreUsers}
         onEndReachedThreshold={0.5}
-        ListEmptyComponent={<EmptyState />}
+        ListEmptyComponent={
+          <EmptyState
+            searchQuery={searchQuery}
+            hasFilters={!!(filters.role || filters.status)}
+            onClearFilters={handleClearFilters}
+            colors={colors}
+          />
+        }
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.loadingMore}>
@@ -693,210 +369,62 @@ export default function UserManagementScreen() {
         }
       />
 
-      {/* Filter Modal */}
-      <FilterModal />
-
-      {/* Add User Modal */}
-      <UserModal
-        visible={showAddModal}
-        onClose={() => {
-          setShowAddModal(false);
-          setNewUser({ name: '', email: '', role: 'user', password: '' });
+      {/* Modals */}
+      <FilterModal
+        visible={showFilterModal}
+        filters={filters}
+        onClose={() => setShowFilterModal(false)}
+        onApply={(newFilters) => {
+          updateFilters(newFilters);
+          setShowFilterModal(false);
         }}
+        onClear={handleClearFilters}
+        colors={colors}
+      />
+
+      <UserFormModal
+        visible={showAddModal}
         title="Add New User"
-      >
-        <View style={styles.modalBody}>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Name</Text>
-            <View style={[styles.inputContainer, { backgroundColor: `${colors.primary}08` }]}>
-              <User size={18} color={colors.textSecondary} />
-              <TextInput
-                style={[styles.input, { color: colors.text }]}
-                placeholder="Enter name"
-                placeholderTextColor={colors.textSecondary}
-                value={newUser.name}
-                onChangeText={(text) => setNewUser({ ...newUser, name: text })}
-              />
-            </View>
-          </View>
+        initialData={newUserInitial}
+        onClose={() => setShowAddModal(false)}
+        onSubmit={handleAddUser}
+        loading={loading}
+        colors={colors}
+      />
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Email</Text>
-            <View style={[styles.inputContainer, { backgroundColor: `${colors.primary}08` }]}>
-              <Mail size={18} color={colors.textSecondary} />
-              <TextInput
-                style={[styles.input, { color: colors.text }]}
-                placeholder="Enter email"
-                placeholderTextColor={colors.textSecondary}
-                value={newUser.email}
-                onChangeText={(text) => setNewUser({ ...newUser, email: text })}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: colors.text }]}>Role</Text>
-            <View style={styles.roleSelector}>
-              {['user', 'admin'].map((role) => (
-                <TouchableOpacity
-                  key={role}
-                  style={[
-                    styles.roleOption,
-                    {
-                      backgroundColor: newUser.role === role
-                        ? colors.primary
-                        : `${colors.primary}10`,
-                    },
-                  ]}
-                  onPress={() => setNewUser({ ...newUser, role: role as any })}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      styles.roleOptionText,
-                      {
-                        color: newUser.role === role ? '#FFFFFF' : colors.text,
-                        fontWeight: newUser.role === role ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    {role.charAt(0).toUpperCase() + role.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]}
-              onPress={() => {
-                setShowAddModal(false);
-                setNewUser({ name: '', email: '', role: 'user', password: '' });
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.saveButton, { backgroundColor: colors.primary }]}
-              onPress={handleAddUser}
-              activeOpacity={0.8}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Add User</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </UserModal>
-
-      {/* Edit User Modal */}
       {selectedUser && (
-        <UserModal
+        <UserFormModal
           visible={showEditModal}
+          title="Edit User"
+          initialData={selectedUser}
           onClose={() => {
             setShowEditModal(false);
             setSelectedUser(null);
           }}
-          title="Edit User"
-        >
-          <View style={styles.modalBody}>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.text }]}>Name</Text>
-              <View style={[styles.inputContainer, { backgroundColor: `${colors.primary}08` }]}>
-                <User size={18} color={colors.textSecondary} />
-                <TextInput
-                  style={[styles.input, { color: colors.text }]}
-                  placeholder="Enter name"
-                  placeholderTextColor={colors.textSecondary}
-                  value={selectedUser.name}
-                  onChangeText={(text) => setSelectedUser({ ...selectedUser, name: text })}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.text }]}>Email</Text>
-              <View style={[styles.inputContainer, { backgroundColor: `${colors.primary}08` }]}>
-                <Mail size={18} color={colors.textSecondary} />
-                <TextInput
-                  style={[styles.input, { color: colors.text }]}
-                  placeholder="Enter email"
-                  placeholderTextColor={colors.textSecondary}
-                  value={selectedUser.email}
-                  onChangeText={(text) => setSelectedUser({ ...selectedUser, email: text })}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: colors.text }]}>Role</Text>
-              <View style={styles.roleSelector}>
-                {['user', 'admin'].map((role) => (
-                  <TouchableOpacity
-                    key={role}
-                    style={[
-                      styles.roleOption,
-                      {
-                        backgroundColor: selectedUser.role === role
-                          ? colors.primary
-                          : `${colors.primary}10`,
-                      },
-                    ]}
-                    onPress={() => setSelectedUser({ ...selectedUser, role: role as any })}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.roleOptionText,
-                        {
-                          color: selectedUser.role === role ? '#FFFFFF' : colors.text,
-                          fontWeight: selectedUser.role === role ? '700' : '500',
-                        },
-                      ]}
-                    >
-                      {role.charAt(0).toUpperCase() + role.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]}
-                onPress={() => {
-                  setShowEditModal(false);
-                  setSelectedUser(null);
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton, { backgroundColor: colors.primary }]}
-                onPress={handleUpdateUser}
-                activeOpacity={0.8}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Save Changes</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </UserModal>
+          onSubmit={handleUpdateUser}
+          loading={loading}
+          colors={colors}
+          isEdit
+        />
       )}
+
+      <ConfirmDialog
+        visible={showDeleteDialog}
+        title="Delete User"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setShowDeleteDialog(false);
+          setUserToDelete(null);
+        }}
+        loading={loading}
+        colors={colors}
+        destructive
+      />
+
+      <Toast />
     </SafeAreaView>
   );
 }
@@ -914,33 +442,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  
+  // Search Section - IMPROVED
   searchSection: {
-    flexDirection: 'row',
-    paddingHorizontal: 24,
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     gap: 12,
   },
   searchContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   searchInput: {
     flex: 1,
@@ -948,24 +467,43 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
   },
+  clearButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  
+  // Action Buttons - IMPROVED
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   filterButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: 'center',
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   filterBadge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: '#ef4444',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    top: 8,
+    right: 8,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   filterBadgeText: {
     color: '#FFFFFF',
@@ -973,143 +511,84 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: 'center',
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
-  activeFiltersScroll: {
-    marginBottom: 12,
-    maxHeight: 40,
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  
+  // Active Filters - IMPROVED
+  activeFiltersWrapper: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   activeFiltersContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     gap: 8,
+    alignItems: 'center',
   },
   activeFilterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingLeft: 14,
+    paddingRight: 10,
+    paddingVertical: 8,
+    borderRadius: 20,
     gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  activeFilterText: {
+  activeFilterLabel: {
     fontSize: 12,
-    fontWeight: '600',
-  },
-  usersList: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-  },
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    position: 'relative',
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  userAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  userDetails: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  userEmail: {
-    fontSize: 13,
-    marginBottom: 6,
     fontWeight: '500',
   },
-  userMeta: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  roleChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  roleText: {
-    fontSize: 10,
+  activeFilterValue: {
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.5,
   },
-  statusBadge: {
+  chipCloseButton: {
+    marginLeft: 2,
+    padding: 2,
+  },
+  clearAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    gap: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  clearAllText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  optionsButton: {
-    padding: 8,
-  },
-  optionsMenu: {
-    position: 'absolute',
-    top: 60,
-    right: 16,
-    borderRadius: 12,
-    padding: 8,
-    elevation: 8,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    zIndex: 10,
-    minWidth: 150,
-  },
-  optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    gap: 10,
-  },
-  optionText: {
-    fontSize: 14,
-    fontWeight: '600',
+  
+  usersList: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   loadingMore: {
     flexDirection: 'row',
@@ -1121,158 +600,5 @@ const styles = StyleSheet.create({
   loadingMoreText: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  clearButton: {
-    marginTop: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  clearButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  retryButton: {
-    marginTop: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 24,
-    padding: 24,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  modalBody: {
-    gap: 16,
-  },
-  filterModalBody: {
-    gap: 20,
-  },
-  filterGroup: {
-    gap: 12,
-  },
-  filterLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  filterOptions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  filterOption: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  filterOptionText: {
-    fontSize: 14,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  roleSelector: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  roleOption: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  roleOptionText: {
-    fontSize: 14,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    borderWidth: 2,
-  },
-  saveButton: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  modalButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
   },
 });

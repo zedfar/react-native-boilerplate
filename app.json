@@ -45,6 +45,8 @@
       "typedRoutes": true
     },
     "extra": {
+      "APP_NAME": "",
+      "BASE_URL": "",
       "eas": {
         "projectId": "94463967-69e2-4f30-88bc-fb52430cba59"
       },

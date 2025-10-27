@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  KeyboardAvoidingView, 
-  Platform, 
-  Alert, 
+import {
+  View,
+  Text,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
   TouchableOpacity,
   Animated,
   Dimensions,
@@ -13,11 +13,12 @@ import {
   TextInput
 } from 'react-native';
 import { Link } from 'expo-router';
-import { Mail, Lock, Eye, EyeOff, LogIn, Sparkles , TentTree, Biohazard} from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, LogIn, Sparkles, TentTree, Biohazard } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/common/Button';
 import { validation } from '@/utils/validation';
+import { APP_CONFIG } from '@/utils/constants';
 
 
 const { width, height } = Dimensions.get('window');
@@ -95,12 +96,12 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <Animated.View 
+          <Animated.View
             style={[
               styles.contentContainer,
               {
@@ -120,9 +121,9 @@ export default function LoginScreen() {
                 </View>
                 <View style={[styles.iconGlow, { backgroundColor: `${colors.primary}20` }]} />
               </View>
-              
+
               <Text style={[styles.title, { color: colors.text }]}>
-                Research Portal
+                {APP_CONFIG.NAME}
               </Text>
               <View style={styles.subtitleContainer}>
                 <Sparkles size={16} color={colors.textSecondary} />
@@ -133,7 +134,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Form Container with Card Style */}
-            <View style={[styles.formCard, { 
+            <View style={[styles.formCard, {
               backgroundColor: colors.card || colors.background,
               shadowColor: colors.text,
             }]}>
@@ -144,7 +145,7 @@ export default function LoginScreen() {
                 </Text>
                 <View style={[
                   styles.inputContainer,
-                  { 
+                  {
                     backgroundColor: `${colors.primary}05`,
                     borderColor: errors.email ? `${colors.error}` : 'transparent',
                   }
@@ -181,7 +182,7 @@ export default function LoginScreen() {
                 </Text>
                 <View style={[
                   styles.inputContainer,
-                  { 
+                  {
                     backgroundColor: `${colors.primary}05`,
                     borderColor: errors.password ? `${colors.error}` : 'transparent',
                   }
@@ -224,7 +225,7 @@ export default function LoginScreen() {
               </View>
 
               {/* Forgot Password Link */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.forgotPasswordButton}
                 activeOpacity={0.7}
               >
@@ -358,11 +359,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: 8,
     letterSpacing: -0.5,
+    textAlign: 'center'
   },
   subtitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    textAlign: 'center'
   },
   subtitle: {
     fontSize: 15,

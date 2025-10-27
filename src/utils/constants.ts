@@ -1,5 +1,14 @@
+import Constants from 'expo-constants';
+
+const extra = Constants.expoConfig?.extra || {};
+
+export const APP_CONFIG = {
+  NAME: extra.APP_NAME || Constants.expoConfig?.name || 'Default App',
+  BASE_URL: extra.BASE_URL || (__DEV__ ? 'http://localhost:3000' : 'https://api.production.com'),
+};
+
 export const API_CONFIG = {
-  BASE_URL: __DEV__ ? 'http://10.1.59.172:8000/api/v1/' : 'http://10.1.59.172:8000/api/v1/',
+  BASE_URL: APP_CONFIG.BASE_URL,
   TIMEOUT: 10000,
   MOCK_API: __DEV__
 };

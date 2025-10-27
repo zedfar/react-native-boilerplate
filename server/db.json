@@ -18,9 +18,12 @@
       "name": "Developer",
       "role": "admin",
       "status": "active",
-      "avatar": "https://i.pravatar.cc/150?img=2",
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
+      "avatar": "https://i.pravatar.cc/150?img=28",
+      "about": "Passionate about technology and innovation. Always learning something new.",
+      "phone": "+1 234 567 8900",
+      "location": "New York, USA",
+      "createdAt": "2025-05-01T00:00:00.000Z",
+      "updatedAt": "2025-05-01T00:00:00.000Z"
     },
     {
       "id": "3",
@@ -31,7 +34,7 @@
       "status": "active",
       "avatar": "https://i.pravatar.cc/150?img=3",
       "createdAt": "2024-01-02T00:00:00.000Z",
-      "updatedAt": "2024-01-02T00:00:00.000Z"
+      "updatedAt": "2024-05-02T00:00:00.000Z"
     },
     {
       "id": "4",
@@ -92,12 +95,34 @@
       "id": "9",
       "email": "user@localhost.com",
       "password": "@developer",
-      "name": "Developer",
+      "name": "User",
       "role": "user",
       "status": "active",
       "avatar": "https://i.pravatar.cc/150?img=10",
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
+      "createdAt": "2025-05-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "10",
+      "email": "mockup@localhost.com",
+      "password": "@developer",
+      "name": "Mockup",
+      "role": "user",
+      "status": "active",
+      "avatar": "https://i.pravatar.cc/150?img=7",
+      "createdAt": "2025-05-01T00:00:00.000Z",
+      "updatedAt": "2025-05-01T00:00:00.000Z"
+    },
+    {
+      "id": "11",
+      "email": "tester@localhost.com",
+      "password": "@developer",
+      "name": "Tester",
+      "role": "user",
+      "status": "active",
+      "avatar": "https://i.pravatar.cc/150?img=9",
+      "createdAt": "2025-05-01T00:00:00.000Z",
+      "updatedAt": "2025-05-01T00:00:00.000Z"
     }
   ],
   "news": [
