@@ -77,22 +77,20 @@ export default function MainLayout() {
         }}
       />
 
-      {isAdmin && (
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: 'Settings',
-            tabBarIcon: ({ color, focused }) => (
-              <View style={[
-                styles.iconContainer,
-                focused && { backgroundColor: `${colors.primary}15` }
-              ]}>
-                <Settings size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
-              </View>
-            ),
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[
+              styles.iconContainer,
+              focused && { backgroundColor: `${colors.primary}15` }
+            ]}>
+              <Settings size={24} color={color} strokeWidth={focused ? 2.5 : 2} />
+            </View>
+          ),
+        }}
+      />
     </Tabs>
   );
 }

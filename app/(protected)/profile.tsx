@@ -29,16 +29,14 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Profile data state
-  const [profileData, setProfileData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    location: '',
-    about: '',
-    avatar: '',
-    joinDate: '',
-  });
+  // Profile data state - FIX: Separate state untuk setiap field
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [location, setLocation] = useState('');
+  const [about, setAbout] = useState('');
+  const [avatar, setAvatar] = useState('');
+  const [joinDate, setJoinDate] = useState('');
 
   // Load current user data
   useEffect(() => {
@@ -46,18 +44,19 @@ export default function ProfileScreen() {
       const userProfile = users.find(u => u.id === user.id || u.email === user.email);
       if (userProfile) {
         setCurrentUser(userProfile);
-        setProfileData({
-          name: userProfile.name || '',
-          email: userProfile.email || '',
-          phone: userProfile.phone || '',
-          location: userProfile.location || '',
-          about: userProfile.about || '',
-          avatar: userProfile.avatar || '',
-          joinDate: new Date(userProfile.createdAt).toLocaleDateString('en-US', {
+        setName(userProfile.name || '');
+        setEmail(userProfile.email || '');
+        setPhone(userProfile.phone || '');
+        setLocation(userProfile.location || '');
+        setAbout(userProfile.about || '');
+        setAvatar(userProfile.avatar || '');
+        setJoinDate(
+          new Date(userProfile.createdAt).toLocaleDateString('en-US', {
             year: 'numeric',
-            month: 'long'
-          }),
-        });
+            month: 'long',
+            day: 'numeric'
+          })
+        );
       }
     }
   }, [user, users]);
@@ -69,11 +68,11 @@ export default function ProfileScreen() {
     try {
       const updateData: UpdateUserInput = {
         id: currentUser.id,
-        name: profileData.name,
-        email: profileData.email,
-        phone: profileData.phone,
-        location: profileData.location,
-        about: profileData.about,
+        name,
+        email,
+        phone,
+        location,
+        about,
         role: currentUser.role,
         status: currentUser.status,
         avatar: currentUser.avatar,
@@ -83,6 +82,7 @@ export default function ProfileScreen() {
 
       if (result.success) {
         setIsEditing(false);
+        Alert.alert('Success', 'Profile updated successfully');
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to update profile');
@@ -95,23 +95,16 @@ export default function ProfileScreen() {
     setIsEditing(false);
     // Reset to original values
     if (currentUser) {
-      setProfileData({
-        name: currentUser.name || '',
-        email: currentUser.email || '',
-        phone: currentUser.phone || '',
-        location: currentUser.location || '',
-        about: currentUser.about || '',
-        avatar: currentUser.avatar || '',
-        joinDate: new Date(currentUser.createdAt).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long'
-        }),
-      });
+      setName(currentUser.name || '');
+      setEmail(currentUser.email || '');
+      setPhone(currentUser.phone || '');
+      setLocation(currentUser.location || '');
+      setAbout(currentUser.about || '');
     }
   };
 
-  const InfoCard = ({ icon: Icon, label, value, editable = false, fieldKey }: any) => (
-    <View style={[styles.infoCard, { backgroundColor: `${colors.primary}08` }]}>
+  const InfoCard = ({ icon: Icon, label, value, editable = false, onChangeText }: any) => (
+    <View style={[styles.infoCard, { backgroundColor: colors.card || colors.background }]}>
       <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}15` }]}>
         <Icon size={20} color={colors.primary} />
       </View>
@@ -119,11 +112,12 @@ export default function ProfileScreen() {
         <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{label}</Text>
         {isEditing && editable ? (
           <TextInput
-            style={[styles.infoInput, { color: colors.text, borderColor: colors.border }]}
+            style={[styles.infoInput, { color: colors.text, borderColor: `${colors.primary}30` }]}
             value={value}
-            onChangeText={(text) => setProfileData({ ...profileData, [fieldKey]: text })}
+            onChangeText={onChangeText}
             placeholder={label}
             placeholderTextColor={colors.textSecondary}
+            editable={!saving}
           />
         ) : (
           <Text style={[styles.infoValue, { color: colors.text }]}>{value || '-'}</Text>
@@ -141,7 +135,7 @@ export default function ProfileScreen() {
 
   if (loading && !currentUser) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <AppHeader
           variant="back"
           title="Profile"
@@ -161,7 +155,7 @@ export default function ProfileScreen() {
 
   if (!currentUser) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <AppHeader
           variant="back"
           title="Profile"
@@ -179,7 +173,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <AppHeader
         variant="back"
         title="Profile"
@@ -190,38 +184,50 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with Avatar */}
         <View style={styles.header}>
-          <Image
-            source={{ uri: profileData.avatar }}
-            style={styles.avatarContainer}
-            defaultSource={require('@/assets/images/icon.png')} // optional fallback
-          />
-
-          <Text style={[styles.userName, { color: colors.text }]}>{profileData.name}</Text>
-          <View style={[styles.roleBadge, { backgroundColor: `${colors.primary}15` }]}>
-            <Text style={[styles.roleText, { color: colors.primary }]}>
-              {currentUser.role.toUpperCase()}
-            </Text>
+          <View style={[styles.avatarContainer, { backgroundColor: `${colors.primary}20` }]}>
+            {avatar ? (
+              <Image
+                source={{ uri: avatar }}
+                style={styles.avatarImage}
+                defaultSource={require('@/assets/images/icon.png')}
+              />
+            ) : (
+              <Text style={[styles.avatarText, { color: colors.primary }]}>
+                {name.charAt(0).toUpperCase()}
+              </Text>
+            )}
           </View>
-          <View style={[
-            styles.statusBadge,
-            { backgroundColor: currentUser.status === 'active' ? '#10b98110' : '#ef444410' }
-          ]}>
+
+          <Text style={[styles.userName, { color: colors.text }]}>{name}</Text>
+          
+          <View style={styles.badgeContainer}>
+            <View style={[styles.roleBadge, { backgroundColor: `${colors.primary}15` }]}>
+              <Text style={[styles.roleText, { color: colors.primary }]}>
+                {currentUser.role.toUpperCase()}
+              </Text>
+            </View>
+            
             <View style={[
-              styles.statusDot,
-              { backgroundColor: currentUser.status === 'active' ? '#10b981' : '#ef4444' }
-            ]} />
-            <Text style={[
-              styles.statusText,
-              { color: currentUser.status === 'active' ? '#10b981' : '#ef4444' }
+              styles.statusBadge,
+              { backgroundColor: currentUser.status === 'active' ? '#10b98115' : '#ef444415' }
             ]}>
-              {currentUser.status === 'active' ? 'Active' : 'Inactive'}
-            </Text>
+              <View style={[
+                styles.statusDot,
+                { backgroundColor: currentUser.status === 'active' ? '#10b981' : '#ef4444' }
+              ]} />
+              <Text style={[
+                styles.statusText,
+                { color: currentUser.status === 'active' ? '#10b981' : '#ef4444' }
+              ]}>
+                {currentUser.status === 'active' ? 'Active' : 'Inactive'}
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Stats */}
         <View style={styles.statsContainer}>
-          <StatCard title="Articles Read" value="127" color="#10b981" />
+          <StatCard title="Articles" value="127" color="#10b981" />
           <StatCard title="Favorites" value="34" color="#f59e0b" />
           <StatCard title="Comments" value="89" color="#3b82f6" />
         </View>
@@ -231,7 +237,7 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={[styles.editButton, { backgroundColor: colors.primary }]}
             onPress={() => setIsEditing(true)}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
           >
             <Edit2 size={18} color="#FFFFFF" />
             <Text style={styles.editButtonText}>Edit Profile</Text>
@@ -239,21 +245,31 @@ export default function ProfileScreen() {
         ) : (
           <View style={styles.editActions}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.cancelButton, { borderColor: colors.border }]}
+              style={[styles.actionButton, styles.cancelButton, { 
+                borderColor: colors.border,
+                backgroundColor: colors.card || colors.background
+              }]}
               onPress={handleCancel}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
               disabled={saving}
             >
               <X size={18} color={colors.text} />
               <Text style={[styles.actionButtonText, { color: colors.text }]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionButton, styles.saveButton, { backgroundColor: colors.primary }]}
+              style={[styles.actionButton, styles.saveButton, { 
+                backgroundColor: colors.primary,
+                opacity: saving ? 0.7 : 1
+              }]}
               onPress={handleSave}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
               disabled={saving}
             >
-              <Save size={18} color="#FFFFFF" />
+              {saving ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Save size={18} color="#FFFFFF" />
+              )}
               <Text style={[styles.actionButtonText, { color: '#FFFFFF' }]}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </Text>
@@ -263,61 +279,66 @@ export default function ProfileScreen() {
 
         {/* Profile Information */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Profile Information</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Personal Information</Text>
 
           <InfoCard
             icon={User}
-            label="Name"
-            value={profileData.name}
+            label="Full Name"
+            value={name}
             editable
-            fieldKey="name"
+            onChangeText={setName}
           />
           <InfoCard
             icon={Mail}
-            label="Email"
-            value={profileData.email}
+            label="Email Address"
+            value={email}
             editable
-            fieldKey="email"
+            onChangeText={setEmail}
           />
           <InfoCard
             icon={Phone}
-            label="Phone"
-            value={profileData.phone}
+            label="Phone Number"
+            value={phone}
             editable
-            fieldKey="phone"
+            onChangeText={setPhone}
           />
           <InfoCard
             icon={MapPin}
             label="Location"
-            value={profileData.location}
+            value={location}
             editable
-            fieldKey="location"
+            onChangeText={setLocation}
           />
           <InfoCard
             icon={Calendar}
             label="Member Since"
-            value={profileData.joinDate}
+            value={joinDate}
           />
         </View>
 
         {/* Bio Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
-          <View style={[styles.bioCard, { backgroundColor: `${colors.primary}08` }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>About Me</Text>
+          <View style={[styles.bioCard, { backgroundColor: colors.card || colors.background }]}>
             {isEditing ? (
               <TextInput
-                style={[styles.bioInput, { color: colors.text, borderColor: colors.border }]}
-                value={profileData.about}
-                onChangeText={(text) => setProfileData({ ...profileData, about: text })}
+                style={[styles.bioInput, { 
+                  color: colors.text, 
+                  borderColor: `${colors.primary}30`,
+                  backgroundColor: colors.background
+                }]}
+                value={about}
+                onChangeText={setAbout}
                 placeholder="Tell us about yourself..."
                 placeholderTextColor={colors.textSecondary}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
+                editable={!saving}
               />
             ) : (
               <Text style={[styles.bioText, { color: colors.text }]}>
-                {profileData.about || 'No bio available'}
+                {about || 'No bio available. Add your bio by editing your profile.'}
               </Text>
             )}
           </View>
@@ -350,50 +371,53 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 24,
+    paddingTop: 40,
+    paddingBottom: 32,
     paddingHorizontal: 24,
   },
   avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    elevation: 4,
+    marginBottom: 20,
+    elevation: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 60,
   },
   avatarText: {
-    fontSize: 36,
+    fontSize: 48,
     fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  userAvatar: {
-    // width: 100,
-    // height: 50,
-    borderRadius: 25,
-    marginRight: 12,
   },
   userName: {
     fontSize: 28,
     fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   roleBadge: {
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 20,
-    marginBottom: 8,
   },
   roleText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -420,43 +444,50 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    padding: 16,
+    padding: 20,
     borderRadius: 16,
     alignItems: 'center',
-    elevation: 1,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
     marginBottom: 4,
   },
   statTitle: {
     fontSize: 11,
     fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 24,
-    marginBottom: 24,
-    paddingVertical: 14,
+    marginBottom: 32,
+    paddingVertical: 16,
     borderRadius: 16,
     gap: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   editButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   editActions: {
     flexDirection: 'row',
     paddingHorizontal: 24,
-    marginBottom: 24,
+    marginBottom: 32,
     gap: 12,
   },
   actionButton: {
@@ -464,9 +495,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderRadius: 16,
     gap: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   cancelButton: {
     borderWidth: 2,
@@ -480,12 +516,13 @@ const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: 24,
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
     marginBottom: 16,
+    letterSpacing: 0.3,
   },
   infoCard: {
     flexDirection: 'row',
@@ -493,14 +530,19 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   iconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   infoContent: {
     flex: 1,
@@ -508,32 +550,40 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 12,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   infoValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   infoInput: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
-    borderBottomWidth: 1,
-    paddingVertical: 4,
+    borderBottomWidth: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
   },
   bioCard: {
-    padding: 16,
+    padding: 20,
     borderRadius: 16,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   bioText: {
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   bioInput: {
     fontSize: 15,
-    lineHeight: 22,
-    minHeight: 80,
-    borderWidth: 1,
+    lineHeight: 24,
+    minHeight: 120,
+    borderWidth: 2,
     borderRadius: 12,
-    padding: 12,
+    padding: 16,
   },
 });
